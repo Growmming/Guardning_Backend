@@ -1,5 +1,6 @@
 package com.growmming.gurdening.domain.dto;
 
+import com.google.gson.annotations.SerializedName;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,6 +12,7 @@ public class TokenDTO {
     @AllArgsConstructor
     public static class GoogleToken {
         private String googleAccessToken;
+        private String googleRefreshToken;
     }
 
     @Data
