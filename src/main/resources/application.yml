@@ -8,9 +8,35 @@ spring:
     database: mysql
     database-platform: org.hibernate.dialect.MySQL8Dialect
     hibernate:
-      ddl-auto: create
+      ddl-auto: none
     show-sql: true
     properties:
       hibernate:
         format_sql: false
         use_sql_comments: true
+#    defer-datasource-initialization: true
+  sql:
+    init:
+      mode: always
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: ${REDIS_PASSWORD}
+google:
+  client-id: ${GOOGLE_CLIENT_ID}
+  client-secret: ${GOOGLE_CLIENT_SECRET}
+  redirect-uri: ${GOOGLE_REDIRECT_URI}
+jwt:
+  secret: ${JWT_SECRET}
+  expiration:
+    accessToken: ${ACCESS_TOKEN_VALIDITY_IN_MILLISECONDS}
+    refreshToken: ${REFRESH_TOKEN_VALIDITY_IN_MILLISECONDS}
+server:
+  port: 8443
+  ssl:
+    key-store: /etc/letsencrypt/live/gurdening.duckdns.org/keystore.p12
+    key-store-password: ${KEY_STORE_PASSWORD}
+    key-store-type: pkcs12
+    key-alias: tomcat
+    enabled: true
