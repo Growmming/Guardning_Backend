@@ -27,6 +27,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
 
 @Service
 public class OAuth2Service {
@@ -52,33 +58,41 @@ public class OAuth2Service {
     }
 
     public TokenDTO.GoogleToken getGoogleAccessToken(String code) {
-        RestTemplate restTemplate = new RestTemplate(); //  HTTP 요청을 보내기 위한 RestTemplate 객체 생성
-        Map<String, String> params = Map.of(
-                "code", code,
-                "scope", "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
-                "client_id", googleClientId,
-                "client_secret", googleClientSecret,
-                "redirect_uri", googleRedirectUri,
-                "grant_type", "authorization_code"
-        );
+    RestTemplate restTemplate = new RestTemplate();
 
-        // 헤더와 파라미터 따로 설정할 필요 없는(자동) 코드
-        ResponseEntity<String> responseEntity = restTemplate.postForEntity(GOOGLE_TOKEN_URL, params, String.class);
+    // 요청 파라미터를 MultiValueMap에 추가
+    MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+    params.add("code", code);
+    params.add("client_id", googleClientId);
+    params.add("client_secret", googleClientSecret);
+    params.add("redirect_uri", googleRedirectUri);
+    params.add("grant_type", "authorization_code");
+    
+    // Content-Type을 application/x-www-form-urlencoded로 설정
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-        if (responseEntity.getStatusCode().is2xxSuccessful()) {
-            // 응답 본문(JSON)을 파싱하기 위한 JsonElement 객체 생성
-            JsonElement element = JsonParser.parseString(Objects.requireNonNull(responseEntity.getBody()))
-                    .getAsJsonObject();
+    // HttpEntity에 헤더와 파라미터를 설정
+    HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(params, headers);
 
-            // JsonElement 객체에서 access_token 추출
-            String accessToken = element.getAsJsonObject().get("access_token").getAsString();
+    // postForEntity 대신 exchange 메소드 사용
+    ResponseEntity<String> responseEntity = restTemplate.postForEntity(GOOGLE_TOKEN_URL, requestEntity, String.class);
 
-            // 추출한 토큰 값들로 TokenDTO.GoogleToken 객체 생성 후 반환
-            return new TokenDTO.GoogleToken(accessToken);
-        }
+    if (responseEntity.getStatusCode().is2xxSuccessful()) {
+        // 응답 본문(JSON)을 파싱
+        JsonElement element = JsonParser.parseString(Objects.requireNonNull(responseEntity.getBody()))
+                .getAsJsonObject();
 
-        throw new RuntimeException("구글 엑세스 토큰을 가져오는데 실패했습니다.");
+        // access_token 추출
+        String accessToken = element.getAsJsonObject().get("access_token").getAsString();
+
+        // TokenDTO.GoogleToken 객체 생성 후 반환
+        return new TokenDTO.GoogleToken(accessToken);
     }
+
+    throw new RuntimeException("구글 엑세스 토큰을 가져오는데 실패했습니다.");
+}
+
 
     public TokenDTO.ServiceToken loginOrSignUp(MemberDTO.RequestLogin dto) {
         UserInfoDTO userInfoDTO = getUserInfoDTO(dto.getAccessToken());
