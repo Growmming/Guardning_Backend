@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class OAuth2Controller {
     private final OAuth2Service oAuth2Service;
 
-    @GetMapping("/api/oauth2/callback/google")
+    @PostMapping("/api/oauth2/callback/google")
     public TokenDTO.GoogleToken googleCallback(@RequestParam(name = "code") String code) {
         return oAuth2Service.getGoogleAccessToken(code);
     }
